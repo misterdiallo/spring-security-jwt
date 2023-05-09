@@ -34,7 +34,7 @@ public class UserEntity implements UserDetails {
     @Column(nullable = false, unique = true)
     private String password;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "country_id")
     private CountryEntity country;
 

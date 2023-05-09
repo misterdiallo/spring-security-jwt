@@ -46,6 +46,7 @@ public class JwtService {
                 .builder()
                 .setClaims(extractClaims)
                 .setSubject(userDetails.getUsername())
+
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + Integer.parseInt(Objects.requireNonNull(env.getProperty("my-config.request.token.expiration")))))
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
@@ -58,6 +59,7 @@ public class JwtService {
     }
 
     private boolean isTokenExpired(String token) {
+
         return extractExpiration(token).before(new Date());
     }
 

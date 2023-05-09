@@ -20,13 +20,17 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final AuthenticationProvider authenticationProvider;
 
+    public static final String[] whiteListedRoutes = new String[]{
+            "/api/v1/auth/**"
+    };
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
                 .csrf()
                 .disable()
                 .authorizeHttpRequests()
-                .requestMatchers("")
+                .requestMatchers(whiteListedRoutes)
                 .permitAll()
                 .anyRequest()
                 .authenticated()

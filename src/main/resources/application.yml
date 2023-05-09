@@ -6,7 +6,7 @@ spring:
     password: password
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
@@ -20,7 +20,7 @@ my-config:
   request:
     header:
       authorization_name: Authorization
-      should_start_with: MisterDiallo
+      should_start_with: Misterdiallo
     token:
       expiration: 1800000 #30min
   security:
