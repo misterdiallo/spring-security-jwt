@@ -13,3 +13,16 @@ spring:
         format_sql: true
     database: postgresql
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+
+
+my-config:
+  request:
+    header:
+      authorization_name: Authorization
+      should_start_with: MisterDiallo
+    token:
+      expiration: 1800000 #30min
+  security:
+    SECRET_KEY: 566B59703373357638792F423F4528482B4D6251655468576D5A713474377739
+
