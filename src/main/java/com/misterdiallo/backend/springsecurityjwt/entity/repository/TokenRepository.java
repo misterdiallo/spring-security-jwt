@@ -22,4 +22,6 @@ public interface TokenRepository extends JpaRepository<TokenEntity, Integer> {
 
     Optional<TokenEntity> findByToken(String token);
 
+    Optional<TokenEntity> findByRefresh(String refresh);
+
 }

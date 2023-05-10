@@ -26,6 +26,8 @@ public class TokenEntity {
 
     @Column(nullable = false, unique = true)
     private String token;
+    @Column(nullable = false, unique = true)
+    private String refresh;
 
     @Enumerated(EnumType.STRING)
     private TokenType tokenType;

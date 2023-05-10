@@ -62,7 +62,7 @@ public class AuthenticationService {
             var jwtToken = jwtService.generateToken(newUser);
             var refreshToken = jwtService.generateRefreshToken(newUser);
 
-            saveUserToken(newUser, jwtToken);
+            saveUserToken(newUser, jwtToken, refreshToken);
 
             return AuthenticationResponse.builder()
                     .accessToken(jwtToken)
@@ -93,7 +93,7 @@ public class AuthenticationService {
         // Revoke all existing tokens for the user.
         revokeAllUserTokens(user);
         // Save the token for the user
-        saveUserToken(user, jwtToken);
+        saveUserToken(user, jwtToken, refreshToken);
         // Return the response with the token
         return AuthenticationResponse.builder()
                 .accessToken(jwtToken)
@@ -102,12 +102,13 @@ public class AuthenticationService {
     }
 
     // For saving new token for a specific user in the database
-    private void saveUserToken(UserEntity user, String jwtToken) {
+    private void saveUserToken(UserEntity user, String jwtToken, String refreshToken) {
         // Creating the token
         var token = TokenEntity
                 .builder()
                 .user(user)
                 .token(jwtToken)
+                .refresh(refreshToken)
                 .tokenType(TokenType.MISTERDIALLO)
                 .expired(false)
                 .revoked(false)
@@ -148,22 +149,23 @@ public class AuthenticationService {
         if(username != null ) {
             var userDetails = this.userRepository.findByEmailOrUsernameOrPhone(username,username,username)
                     .orElseThrow();
-//            var isRefreshTokenValidInDB = tokenRepository.findByToken(refreshToken)
-//                    .map(t -> !t.isExpired() && !t.isRevoked())
-//                    .orElse(false);
+            var isRefreshTokenValidInDB = tokenRepository.findByRefresh(refreshToken)
+                    .map(t -> !t.isExpired() && !t.isRevoked())
+                    .orElse(false);
             if(
                     jwtService.isTokenValid(refreshToken, userDetails)
-//                            && isRefreshTokenValidInDB
+                            && isRefreshTokenValidInDB
             ) {
                 var accessToken = jwtService.generateToken(userDetails);
+                var newRefreshToken = jwtService.generateRefreshToken(userDetails);
                 // Revoke all existing tokens for the user.
                 revokeAllUserTokens(userDetails);
                 // Save the token for the user
-                saveUserToken(userDetails, accessToken);
+                saveUserToken(userDetails, accessToken, newRefreshToken);
                 var authResponse = AuthenticationResponse
                         .builder()
                         .accessToken(accessToken)
-                        .refreshToken(refreshToken)
+                        .refreshToken(newRefreshToken)
                         .build();
                 new ObjectMapper().writeValue(response.getOutputStream(), authResponse);
             }
