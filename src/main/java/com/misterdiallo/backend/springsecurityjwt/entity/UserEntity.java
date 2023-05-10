@@ -47,6 +47,9 @@ public class UserEntity implements UserDetails {
     @Enumerated(EnumType.STRING)
     private RoleEntity role;
 
+    @OneToMany(mappedBy = "user")
+    private List<TokenEntity> tokens;
+
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
