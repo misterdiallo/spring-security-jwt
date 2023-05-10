@@ -1,6 +1,7 @@
 package com.misterdiallo.backend.springsecurityjwt.service;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.misterdiallo.backend.springsecurityjwt.config.JwtService;
 import com.misterdiallo.backend.springsecurityjwt.entity.*;
 import com.misterdiallo.backend.springsecurityjwt.entity.repository.CountryRepository;
@@ -9,14 +10,23 @@ import com.misterdiallo.backend.springsecurityjwt.entity.repository.UserReposito
 import com.misterdiallo.backend.springsecurityjwt.model.AuthenticationRequest;
 import com.misterdiallo.backend.springsecurityjwt.model.AuthenticationResponse;
 import com.misterdiallo.backend.springsecurityjwt.model.RegisterUserRequest;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.*;
+import org.springframework.core.env.Environment;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -29,6 +39,8 @@ public class AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+
+    private final Environment env;
 
     // Register User
     public AuthenticationResponse register(RegisterUserRequest request) {
@@ -47,12 +59,14 @@ public class AuthenticationService {
                     .build();
             var newUser = userRepository.save(user);
 
-            var jwtToken = jwtService.generateToken(user);
+            var jwtToken = jwtService.generateToken(newUser);
+            var refreshToken = jwtService.generateRefreshToken(newUser);
 
             saveUserToken(newUser, jwtToken);
 
             return AuthenticationResponse.builder()
-                    .token(jwtToken)
+                    .accessToken(jwtToken)
+                    .refreshToken(refreshToken)
                     .build();
         }else {
             return null;
@@ -74,13 +88,16 @@ public class AuthenticationService {
                 .orElseThrow();
         // Generate the token
         var jwtToken = jwtService.generateToken(user);
+        //Generate the refresh token
+        var refreshToken = jwtService.generateRefreshToken(user);
         // Revoke all existing tokens for the user.
         revokeAllUserTokens(user);
         // Save the token for the user
         saveUserToken(user, jwtToken);
         // Return the response with the token
         return AuthenticationResponse.builder()
-                .token(jwtToken)
+                .accessToken(jwtToken)
+                .refreshToken(refreshToken)
                 .build();
     }
 
@@ -116,4 +133,40 @@ public class AuthenticationService {
         tokenRepository.saveAll(validUserTokens);
     }
 
+    public void refreshToken(
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) throws IOException {
+        final String authenticationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+        final String refreshToken;
+        final String username;
+        if(authenticationHeader == null || !authenticationHeader.startsWith(Objects.requireNonNull(env.getProperty("my-config.request.header.should_start_with")))) {
+            return;
+        }
+        refreshToken  = authenticationHeader.substring(Objects.requireNonNull(env.getProperty("my-config.request.header.should_start_with")).length() + 1);
+        username = jwtService.extractUsername(refreshToken);
+        if(username != null ) {
+            var userDetails = this.userRepository.findByEmailOrUsernameOrPhone(username,username,username)
+                    .orElseThrow();
+//            var isRefreshTokenValidInDB = tokenRepository.findByToken(refreshToken)
+//                    .map(t -> !t.isExpired() && !t.isRevoked())
+//                    .orElse(false);
+            if(
+                    jwtService.isTokenValid(refreshToken, userDetails)
+//                            && isRefreshTokenValidInDB
+            ) {
+                var accessToken = jwtService.generateToken(userDetails);
+                // Revoke all existing tokens for the user.
+                revokeAllUserTokens(userDetails);
+                // Save the token for the user
+                saveUserToken(userDetails, accessToken);
+                var authResponse = AuthenticationResponse
+                        .builder()
+                        .accessToken(accessToken)
+                        .refreshToken(refreshToken)
+                        .build();
+                new ObjectMapper().writeValue(response.getOutputStream(), authResponse);
+            }
+        }
+    }
 }
