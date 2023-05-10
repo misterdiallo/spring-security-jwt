@@ -7,8 +7,8 @@ spring:
   jpa:
     hibernate:
 #      ddl-auto: create-drop
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: create-drop
+#    show-sql: true
     properties:
       hibernate:
         format_sql: true
@@ -20,7 +20,7 @@ application:
   security:
     jwt:
       secret-key: 566B59703373357638792F423F4528482B4D6251655468576D5A713474377739
-      expiration: 120000 # 1day = 86400000 , 1min = 6000
+      expiration: 86400000 # 1day = 86400000 , 1min = 60000
       refresh-token:
         expiration: 604800000 # 7days = 604800000 ,
 

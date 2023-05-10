@@ -1,4 +1,5 @@
 package com.misterdiallo.backend.springsecurityjwt.model;
+import com.misterdiallo.backend.springsecurityjwt.entity.RoleEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,5 +18,6 @@ public class RegisterUserRequest {
     private String phone;
     private String username;
     private String password;
+    private RoleEntity role;
 
 }

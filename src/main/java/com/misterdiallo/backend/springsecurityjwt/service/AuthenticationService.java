@@ -53,7 +53,7 @@ public class AuthenticationService {
                     .email(request.getEmail())
                     .phone(request.getPhone())
                     .country(country.get())
-                    .role(RoleEntity.USER)
+                    .role(request.getRole())
                     .username(request.getUsername())
                     .password(passwordEncoder.encode(request.getPassword()))
                     .build();
